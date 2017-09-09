@@ -1,0 +1,28 @@
+#!/bin/bash
+
+## Change ownership of the artifacts if on Linux/Mac
+if [ -z $(id -u $USER) ] || [ -z $(id -g $USER) ]; then
+  echo "Couldn't pass USER credentials into container, leaving artifact ownership as-is"
+else
+  docker run \
+	--rm \
+	--env BR2_DL_DIR=/opt/dlcache/ \
+	--env USER_ID="$(id -u $USER)" \
+	--env USER_GR="$(id -g $USER)" \
+	--volume=${DL_CACHE_VOLUME}:/opt/dlcache/ \
+	--volume=${BUILD_VOLUME}:/opt/devkit/build \
+	--volume=${IMAGES_DIR}:/opt/devkit/images \
+	--volume=${ROOT_DIR}:/opt/devkit \
+	--volume=${TMP_VOLUME}:/tmp \
+	--name=zodiac-build-task \
+	--volume=/etc/group:/etc/group:ro \
+	--volume=/etc/passwd:/etc/passwd:ro \
+	-w="/opt/devkit" \
+	${SSH_FORWARDING} \
+	${LOCAL_ENV} \
+	${INTERACTIVE} \
+	${ROOT_CONTAINER} \
+	/bin/sh -c "chown -R \$USER_ID:\$USER_GR /opt"
+
+fi
+

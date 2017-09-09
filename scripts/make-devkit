@@ -1,0 +1,27 @@
+#!/bin/bash
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+ROOT_CONTAINER=${ROOT_CONTAINER:-"zodiac-build-container"}
+
+DL_CACHE_VOLUME="zodiac-build-dlcache"
+TMP_VOLUME="zodiac-build-tmp"
+BUILD_VOLUME="zodiac-build-build"
+
+echo "Creating the devkit docker image..."
+docker inspect ${ROOT_CONTAINER} 2>/dev/null >/dev/null || docker build -f scripts/Dockerfile -t ${ROOT_CONTAINER} $(pwd)
+
+echo "Creating download cache volume..."
+docker volume inspect "${DL_CACHE_VOLUME}" 2>/dev/null >/dev/null || docker create volume --name "${DL_CACHE_VOLUME}"
+
+echo "Creating temporary volume..."
+docker volume inspect "${TMP_VOLUME}" 2>/dev/null >/dev/null || docker create volume --name "${TMP_VOLUME}"
+
+echo "Creating build volume..."
+docker volume inspect "${BUILD_VOLUME}" 2>/dev/null >/dev/null || docker create volume --name "${BUILD_VOLUME}"
+
+ROOT_DIR="$(pwd)/"
+IMAGES_DIR="$(pwd)/devkit/images"
+
+echo "Executing the docker image..."
+. ${SCRIPT_DIR}/chown-container
